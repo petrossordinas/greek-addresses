@@ -129,6 +129,7 @@ func (a *AddressSearch) FilterStreet(qry string) ([]Street, error) {
 		// We will return the found streets in this array instead of streets
 		var foundStreets []Street
 		for _, street := range streets {
+			street.Name = street.Name + " " + streetNumberStr
 			// If the street does not have any number ranges, return it as all street numbers
 			// match this street
 			if street.Ranges == "" {
