@@ -101,6 +101,7 @@ func (a *AddressSearch) GetAllZipcodes() ([]Zipcode, error) {
 	var zipcodes []Zipcode
 	result := database.DBConn.Preload("Prefecture").
 		Preload("City").
+		Order("zipcode").
 		Find(&zipcodes)
 	if result.Error != nil {
 		return nil, result.Error
