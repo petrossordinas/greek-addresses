@@ -48,6 +48,17 @@ func searchHandler(c *fiber.Ctx) error {
 		})
 	}
 
+	// Get all zip codes
+	if c.Query("zipcode") == "all" {
+		zipcodes, err := service.GetAllZipcodes()
+		if err != nil {
+			return internalServerError(err)
+		}
+		return c.JSON(fiber.Map{
+			"results": zipcodes,
+		})
+	}
+
 	// Filter by zip code
 	if c.Query("zipcode") != "" && c.Query("zipcode_id") == "" {
 		zipcodes, err := service.FilterZipcode(c.Query("zipcode"))

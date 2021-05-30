@@ -60,7 +60,9 @@ type AddressSearch struct {
 // FilterPrefecture -
 func (a *AddressSearch) FilterPrefecture(qry string) ([]Prefecture, error) {
 	var prefectures []Prefecture
-	result := database.DBConn.Where("name LIKE ?", qry+"%").Limit(limit).Find(&prefectures)
+	result := database.DBConn.Where("name LIKE ?", qry+"%").
+		Limit(limit).
+		Find(&prefectures)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -70,7 +72,10 @@ func (a *AddressSearch) FilterPrefecture(qry string) ([]Prefecture, error) {
 // FilterCity -
 func (a *AddressSearch) FilterCity(qry string) ([]City, error) {
 	var cities []City
-	result := database.DBConn.Preload("Prefecture").Where("name LIKE ?", qry+"%").Limit(limit).Find(&cities)
+	result := database.DBConn.Preload("Prefecture").
+		Where("name LIKE ?", qry+"%").
+		Limit(limit).
+		Find(&cities)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -84,6 +89,18 @@ func (a *AddressSearch) FilterZipcode(qry string) ([]Zipcode, error) {
 		Preload("City").
 		Where("zipcode LIKE ?", qry+"%").
 		Limit(limit).
+		Find(&zipcodes)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return zipcodes, nil
+}
+
+// GetAllZipcodes -
+func (a *AddressSearch) GetAllZipcodes() ([]Zipcode, error) {
+	var zipcodes []Zipcode
+	result := database.DBConn.Preload("Prefecture").
+		Preload("City").
 		Find(&zipcodes)
 	if result.Error != nil {
 		return nil, result.Error
