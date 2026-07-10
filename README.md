@@ -70,6 +70,16 @@ This creates a dedicated `graddresses` system user, installs the binary to
 Re-running the install command upgrades the binary and systemd unit in
 place; it never overwrites an existing database or config file.
 
+To remove it:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/petrossordinas/greek-addresses/master/uninstall.sh | sudo bash
+```
+
+This stops the service and removes the unit, binary, and system user, but
+keeps `/var/lib/graddresses` and `/etc/graddresses` in case you reinstall
+later. Add `--purge` to also delete those.
+
 ### Cutting a new release
 
 Release binaries are built and published automatically by
