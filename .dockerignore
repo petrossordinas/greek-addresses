@@ -1,0 +1,5 @@
+.git
+*.log
+.env
+db/*.csv
+db/output.jsonl
