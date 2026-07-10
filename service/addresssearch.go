@@ -120,18 +120,33 @@ func (a *AddressSearch) GetAllZipcodes() ([]Zipcode, error) {
 	return zipcodes, nil
 }
 
-// FilterStreet -
-func (a *AddressSearch) FilterStreet(qry string) ([]Street, error) {
+// FilterStreet - qry is the street name (with optional street number).
+// prefectureQry, cityQry and zipcodeQry are optional wildcard filters on the
+// related prefecture/city/zipcode name, applied via joins in addition to
+// (and combinable with) the ID-based filters already resolved on a.
+func (a *AddressSearch) FilterStreet(qry, prefectureQry, cityQry, zipcodeQry string) ([]Street, error) {
 	var streets []Street
 	dbq := database.DBConn
 	if a.prefecture.ID != 0 {
-		dbq = dbq.Where("prefecture_id = ?", a.prefecture.ID)
+		dbq = dbq.Where("streets.prefecture_id = ?", a.prefecture.ID)
+	}
+	if prefectureQry != "" {
+		dbq = dbq.Joins("JOIN prefectures ON prefectures.id = streets.prefecture_id").
+			Where("prefectures.name LIKE ?", likePattern(prefectureQry))
 	}
 	if a.city.ID != 0 {
-		dbq = dbq.Where("city_id = ?", a.city.ID)
+		dbq = dbq.Where("streets.city_id = ?", a.city.ID)
+	}
+	if cityQry != "" {
+		dbq = dbq.Joins("JOIN cities ON cities.id = streets.city_id").
+			Where("cities.name LIKE ?", likePattern(cityQry))
 	}
 	if a.zipcode.ID != 0 {
-		dbq = dbq.Where("zipcode_id = ?", a.zipcode.ID)
+		dbq = dbq.Where("streets.zipcode_id = ?", a.zipcode.ID)
+	}
+	if zipcodeQry != "" {
+		dbq = dbq.Joins("JOIN zipcodes ON zipcodes.id = streets.zipcode_id").
+			Where("zipcodes.zipcode LIKE ?", likePattern(zipcodeQry))
 	}
 	// Determine qry street name and street number with regex.
 	// Street number is any digit that may be followed by a single character at the end of the string
@@ -141,7 +156,7 @@ func (a *AddressSearch) FilterStreet(qry string) ([]Street, error) {
 	result := dbq.Preload("Prefecture").
 		Preload("City").
 		Preload("Zipcode").
-		Where("name LIKE ?", likePattern(streetName)).
+		Where("streets.name LIKE ?", likePattern(streetName)).
 		Limit(limit).
 		Find(&streets)
 	if result.Error != nil {

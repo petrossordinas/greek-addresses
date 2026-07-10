@@ -29,49 +29,54 @@ func Routes() {
 // Search -
 func searchHandler(c *fiber.Ctx) error {
 	service := new(service.AddressSearch)
+	streetQry := c.Query("street")
 
-	// Filter by prefecture
-	if c.Query("prefecture") != "" && c.Query("prefecture_id") == "" {
-		prefectures, err := service.FilterPrefecture(c.Query("prefecture"))
-		if err != nil {
-			return internalServerError(err)
+	// When searching for a street, prefecture/city/zipcode become wildcard
+	// filters on that search instead of standalone lookups.
+	if streetQry == "" {
+		// Filter by prefecture
+		if c.Query("prefecture") != "" && c.Query("prefecture_id") == "" {
+			prefectures, err := service.FilterPrefecture(c.Query("prefecture"))
+			if err != nil {
+				return internalServerError(err)
+			}
+			return c.JSON(fiber.Map{
+				"results": prefectures,
+			})
 		}
-		return c.JSON(fiber.Map{
-			"results": prefectures,
-		})
-	}
 
-	// Filter by city
-	if c.Query("city") != "" && c.Query("city_id") == "" {
-		cities, err := service.FilterCity(c.Query("city"))
-		if err != nil {
-			return internalServerError(err)
+		// Filter by city
+		if c.Query("city") != "" && c.Query("city_id") == "" {
+			cities, err := service.FilterCity(c.Query("city"))
+			if err != nil {
+				return internalServerError(err)
+			}
+			return c.JSON(fiber.Map{
+				"results": cities,
+			})
 		}
-		return c.JSON(fiber.Map{
-			"results": cities,
-		})
-	}
 
-	// Get all zip codes
-	if c.Query("zipcode") == "all" {
-		zipcodes, err := service.GetAllZipcodes()
-		if err != nil {
-			return internalServerError(err)
+		// Get all zip codes
+		if c.Query("zipcode") == "all" {
+			zipcodes, err := service.GetAllZipcodes()
+			if err != nil {
+				return internalServerError(err)
+			}
+			return c.JSON(fiber.Map{
+				"results": zipcodes,
+			})
 		}
-		return c.JSON(fiber.Map{
-			"results": zipcodes,
-		})
-	}
 
-	// Filter by zip code
-	if c.Query("zipcode") != "" && c.Query("zipcode_id") == "" {
-		zipcodes, err := service.FilterZipcode(c.Query("zipcode"))
-		if err != nil {
-			return internalServerError(err)
+		// Filter by zip code
+		if c.Query("zipcode") != "" && c.Query("zipcode_id") == "" {
+			zipcodes, err := service.FilterZipcode(c.Query("zipcode"))
+			if err != nil {
+				return internalServerError(err)
+			}
+			return c.JSON(fiber.Map{
+				"results": zipcodes,
+			})
 		}
-		return c.JSON(fiber.Map{
-			"results": zipcodes,
-		})
 	}
 
 	// Find prefecture by id
@@ -102,9 +107,8 @@ func searchHandler(c *fiber.Ctx) error {
 	}
 
 	// Filter by street
-	if c.Query("street") != "" {
-		srv := service
-		streets, err := srv.FilterStreet(c.Query("street"))
+	if streetQry != "" {
+		streets, err := service.FilterStreet(streetQry, c.Query("prefecture"), c.Query("city"), c.Query("zipcode"))
 		if err != nil {
 			return internalServerError(err)
 		}
