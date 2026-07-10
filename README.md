@@ -24,16 +24,20 @@ go build -o main .
 
 ## Configuration
 
-The port is resolved in this order:
+Both the port and the database file path are resolved in this order:
 
-1. `-port` command-line flag
-2. `PORT` in a `.env` file (or the environment)
-3. default: `9013`
+1. command-line flag (`-port`, `-db`)
+2. `.env` file (or the environment): `PORT`, `DB_PATH`
+3. defaults: `9013`, `db/gr_addresses.db`
+
+The database path is relative to the process's working directory unless you
+give it an absolute path — this matters if you run the binary from somewhere
+other than the repo root.
 
 ```sh
-./main -port=8080
+./main -port=8080 -db=/path/to/gr_addresses.db
 # or
-cp .env.example .env   # then edit PORT=8080
+cp .env.example .env   # then edit PORT and DB_PATH
 ./main
 ```
 

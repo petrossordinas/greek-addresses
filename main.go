@@ -10,28 +10,34 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const defaultPort = "9013"
+const (
+	defaultPort   = "9013"
+	defaultDBPath = "db/gr_addresses.db"
+)
 
 func main() {
 	portFlag := flag.String("port", "", "port to listen on, e.g. 9013 (overrides PORT env var)")
+	dbFlag := flag.String("db", "", "path to the sqlite database file (overrides DB_PATH env var)")
 	flag.Parse()
 
 	logFile := initLogger()
 	defer logFile.Close()
 	godotenv.Load()
 
-	database.InitDatabase()
-	router.InitRouter(":" + resolvePort(*portFlag))
+	database.InitDatabase(resolve(*dbFlag, "DB_PATH", defaultDBPath))
+	router.InitRouter(":" + resolve(*portFlag, "PORT", defaultPort))
 }
 
-func resolvePort(portFlag string) string {
-	if portFlag != "" {
-		return portFlag
+// resolve returns flagVal if set, otherwise the envVar environment variable
+// if set, otherwise defaultVal.
+func resolve(flagVal, envVar, defaultVal string) string {
+	if flagVal != "" {
+		return flagVal
 	}
-	if port := os.Getenv("PORT"); port != "" {
-		return port
+	if v := os.Getenv(envVar); v != "" {
+		return v
 	}
-	return defaultPort
+	return defaultVal
 }
 
 func initLogger() *os.File {
