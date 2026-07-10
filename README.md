@@ -93,3 +93,42 @@ GET /search?street=28ΗΣ ΟΚΤΩΒΡΙΟΥ&prefecture_id=6&city=%ΘΗΝΑ
 GET /search?prefecture=%ΚΑΔ%
 GET /search?city=%ΒΑΡΒΑΡΑ
 ```
+
+#### Response format
+
+Every successful response is a JSON object with a single `results` key.
+Its value is an array of one of the shapes below (or `null` if nothing
+matched, or if none of the recognized query params were supplied).
+
+**Prefecture** (`prefecture`):
+```json
+{"results": [{"id": 3, "name": "ΑΡΓΟΛΙΔΑΣ"}]}
+```
+
+**City** (`city`) — `prefecture` is preloaded:
+```json
+{"results": [{"id": 35, "prefecture_id": 6, "prefecture": {"id": 6, "name": "ΑΤΤΙΚΗΣ"}, "name": "ΑΘΗΝΑ"}]}
+```
+
+**Zipcode** (`zipcode`, `zipcode_id`, `zipcode=all`) — `city` and `prefecture` are preloaded:
+```json
+{"results": [{"id": 1, "city_id": 35, "city": {"id": 35, "prefecture_id": 6, "name": "ΑΘΗΝΑ"}, "prefecture_id": 6, "prefecture": {"id": 6, "name": "ΑΤΤΙΚΗΣ"}, "zipcode": "10431"}]}
+```
+
+**Street** (`street`) — `zipcode`, `city` and `prefecture` are preloaded. If the
+query included a street number, `name` has it appended and the result set is
+already filtered down to streets whose odd/even `ranges` cover that number:
+```json
+{"results": [{"id": 3, "zipcode_id": 1, "zipcode": {"id": 1, "city_id": 35, "prefecture_id": 6, "zipcode": "10431"}, "city_id": 35, "city": {"id": 35, "prefecture_id": 6, "name": "ΑΘΗΝΑ"}, "prefecture_id": 6, "prefecture": {"id": 6, "name": "ΑΤΤΙΚΗΣ"}, "name": "ΑΓΙΟΥ ΚΩΝΣΤΑΝΤΙΝΟΥ 12", "ranges": "{\"odd\": [{\"to\": \"23\", \"from\": \"1\"}], \"even\": [{\"to\": \"20\", \"from\": \"2\"}]}"}]}
+```
+
+`ranges` is itself a JSON string (not a nested object) with `odd`/`even`
+arrays of `{"from": "...", "to": "..."}` number ranges.
+
+#### Errors
+
+A lookup that fails (e.g. `prefecture_id`/`city_id`/`zipcode_id` for a
+record that doesn't exist, or any other DB error) returns a bare `500
+Internal Server Error` with a plain-text body (`Internal Server Error`) and
+no JSON — check `gr_addresses.log` for the underlying error, it isn't
+returned in the response.
