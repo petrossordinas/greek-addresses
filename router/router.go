@@ -1,12 +1,14 @@
 package router
 
 import (
+	"errors"
 	"gr_addresses/service"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"gorm.io/gorm"
 )
 
 var app = fiber.New()
@@ -84,6 +86,9 @@ func searchHandler(c *fiber.Ctx) error {
 		var err error
 		service, err = service.FindPrefectureByID(c.Query("prefecture_id"))
 		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return emptyResults(c)
+			}
 			return internalServerError(err)
 		}
 	}
@@ -93,6 +98,9 @@ func searchHandler(c *fiber.Ctx) error {
 		var err error
 		service, err = service.FindCityByID(c.Query("city_id"))
 		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return emptyResults(c)
+			}
 			return internalServerError(err)
 		}
 	}
@@ -102,6 +110,9 @@ func searchHandler(c *fiber.Ctx) error {
 		var err error
 		service, err = service.FindZipcodeByID(c.Query("zipcode_id"))
 		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return emptyResults(c)
+			}
 			return internalServerError(err)
 		}
 	}
@@ -126,4 +137,12 @@ func searchHandler(c *fiber.Ctx) error {
 func internalServerError(err error) error {
 	log.Println(err)
 	return fiber.ErrInternalServerError
+}
+
+// emptyResults - Return a 200 with an empty results array, e.g. when an id
+// lookup found no matching record.
+func emptyResults(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{
+		"results": []any{},
+	})
 }

@@ -127,8 +127,11 @@ arrays of `{"from": "...", "to": "..."}` number ranges.
 
 #### Errors
 
-A lookup that fails (e.g. `prefecture_id`/`city_id`/`zipcode_id` for a
-record that doesn't exist, or any other DB error) returns a bare `500
-Internal Server Error` with a plain-text body (`Internal Server Error`) and
-no JSON — check `gr_addresses.log` for the underlying error, it isn't
-returned in the response.
+A `prefecture_id`/`city_id`/`zipcode_id` for a record that doesn't exist is
+not an error — it returns `200 OK` with `{"results": []}`, same as a text
+filter with no matches.
+
+An actual DB error returns a bare `500 Internal Server Error` with a
+plain-text body (`Internal Server Error`) and no JSON — check
+`gr_addresses.log` for the underlying error, it isn't returned in the
+response.
