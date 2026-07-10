@@ -136,6 +136,7 @@ not an error — it returns `200 OK` with `{"results": []}`, same as a text
 filter with no matches.
 
 An actual DB error returns a bare `500 Internal Server Error` with a
-plain-text body (`Internal Server Error`) and no JSON — check
-`gr_addresses.log` for the underlying error, it isn't returned in the
+plain-text body (`Internal Server Error`) and no JSON — check the process's
+logs (stdout/stderr — `journalctl -u graddresses` under systemd, `docker
+logs` under Docker) for the underlying error, it isn't returned in the
 response.
