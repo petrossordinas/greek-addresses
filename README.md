@@ -48,6 +48,41 @@ docker build -t graddresses .
 docker run -p 9013:9013 graddresses
 ```
 
+## Production install (systemd, no Docker)
+
+The binary is a static, cgo-free build (linux/amd64 and linux/arm64), so it
+can run directly on a server without Docker. Install it as a systemd
+service with:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/petrossordinas/greek-addresses/master/install.sh | sudo bash
+```
+
+This creates a dedicated `graddresses` system user, installs the binary to
+`/usr/local/bin/graddresses` and the database to
+`/var/lib/graddresses/gr_addresses.db`, and starts it as a systemd service.
+
+- Config: `/etc/graddresses/graddresses.env` (`PORT`, `DB_PATH`) — edit and
+  `sudo systemctl restart graddresses` to apply.
+- Status: `systemctl status graddresses`
+- Logs: `journalctl -u graddresses -f`
+
+Re-running the install command upgrades the binary and systemd unit in
+place; it never overwrites an existing database or config file.
+
+### Cutting a new release
+
+Release binaries are built and published automatically by
+`.github/workflows/release.yml` whenever a `vX.Y.Z` tag is pushed:
+
+```sh
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+To build the release tarballs locally instead (e.g. to test the installer),
+run `scripts/build.sh`, which cross-compiles both architectures into `dist/`.
+
 ## API
 
 ### `GET /search`
