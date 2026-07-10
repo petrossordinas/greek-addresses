@@ -1,4 +1,4 @@
-FROM golang:1.15.0-alpine3.12
+FROM golang:1.25-alpine
 RUN apk add --no-cache git
 RUN apk add --no-cache sqlite-libs sqlite-dev
 RUN apk add --no-cache build-base
