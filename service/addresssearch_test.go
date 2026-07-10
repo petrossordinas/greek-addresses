@@ -48,6 +48,12 @@ func TestFilterStreetsByNumber(t *testing.T) {
 			wantNames:    []string{"ΜΕ ΓΡΑΜΜΑ 12A"},
 		},
 		{
+			name:         "a multi-byte (Greek) trailing letter is stripped for matching but kept in the name",
+			streets:      []Street{{ID: 1, Name: "ΜΕ ΕΛΛΗΝΙΚΟ ΓΡΑΜΜΑ", Ranges: `{"even": [{"from": "2", "to": "20"}]}`}},
+			streetNumber: "12Α",
+			wantNames:    []string{"ΜΕ ΕΛΛΗΝΙΚΟ ΓΡΑΜΜΑ 12Α"},
+		},
+		{
 			name:         "malformed ranges JSON excludes the street instead of panicking",
 			streets:      []Street{{ID: 1, Name: "ΧΑΛΑΣΜΕΝΟ", Ranges: `not json`}},
 			streetNumber: "4",

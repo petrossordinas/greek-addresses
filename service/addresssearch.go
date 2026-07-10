@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 // Maximum results per query
@@ -176,9 +177,11 @@ func filterStreetsByNumber(streets []Street, streetNumberStr string) []Street {
 	// We need to parse the street number to an int.
 	streetNumber, _ := strconv.ParseInt(streetNumberStr, 10, 32)
 	// If the street number parses to 0, means we have a letter at the end, so retry by
-	// removing the last character of the street number string
+	// removing the last rune of the street number string (it may be a
+	// multi-byte character, e.g. a Greek letter, so trim by rune, not byte)
 	if streetNumber == 0 {
-		streetNumber, _ = strconv.ParseInt(streetNumberStr[:len(streetNumberStr)-1], 10, 32)
+		_, size := utf8.DecodeLastRuneInString(streetNumberStr)
+		streetNumber, _ = strconv.ParseInt(streetNumberStr[:len(streetNumberStr)-size], 10, 32)
 	}
 	// We will return the found streets in this array instead of streets
 	var foundStreets []Street
