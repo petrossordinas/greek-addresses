@@ -163,58 +163,66 @@ func (a *AddressSearch) FilterStreet(qry, prefectureQry, cityQry, zipcodeQry str
 		return nil, result.Error
 	}
 	if len(streets) > 0 && streetNumberStr != "" {
-		// We need to parse the street number to an int.
-		streetNumber, _ := strconv.ParseInt(streetNumberStr, 10, 32)
-		// If the street number parses to 0, means we have a letter at the end, so retry by
-		// removing the last character of the street number string
-		if streetNumber == 0 {
-			streetNumber, _ = strconv.ParseInt(streetNumberStr[:len(streetNumberStr)-1], 10, 32)
+		return filterStreetsByNumber(streets, streetNumberStr), nil
+	}
+	return streets, nil
+}
+
+// filterStreetsByNumber narrows streets down to those whose Ranges include
+// streetNumberStr, a street number that may end with a single letter (e.g.
+// "12Α"). A street with no Ranges matches any number. Each matching street's
+// Name has streetNumberStr appended.
+func filterStreetsByNumber(streets []Street, streetNumberStr string) []Street {
+	// We need to parse the street number to an int.
+	streetNumber, _ := strconv.ParseInt(streetNumberStr, 10, 32)
+	// If the street number parses to 0, means we have a letter at the end, so retry by
+	// removing the last character of the street number string
+	if streetNumber == 0 {
+		streetNumber, _ = strconv.ParseInt(streetNumberStr[:len(streetNumberStr)-1], 10, 32)
+	}
+	// We will return the found streets in this array instead of streets
+	var foundStreets []Street
+	for _, street := range streets {
+		street.Name = street.Name + " " + streetNumberStr
+		// If the street does not have any number ranges, return it as all street numbers
+		// match this street
+		if street.Ranges == "" {
+			foundStreets = append(foundStreets, street)
+			continue
 		}
-		// We will return the found streets in this array instead of streets
-		var foundStreets []Street
-		for _, street := range streets {
-			street.Name = street.Name + " " + streetNumberStr
-			// If the street does not have any number ranges, return it as all street numbers
-			// match this street
-			if street.Ranges == "" {
-				foundStreets = append(foundStreets, street)
-				continue
-			}
-			// The ranges are in JSON form, with one or two fields "odd" or "even", each having
-			// and array of json objects { from: number } and { to: number}
-			var r map[string][]map[string]string
-			e := json.Unmarshal([]byte(street.Ranges), &r)
-			if e != nil {
-				log.Println(e)
-			}
-			// Based on the street number, we determine if we are looking at the odd numbered or even
-			// numbered side
-			side := "even"
-			if streetNumber%2 == 1 {
-				side = "odd"
-			}
-			// If we have a range of numbers for the determined side
-			numberRange, ok := r[side]
-			if ok {
-				// Go through all the number ranges for that side
-				for _, v := range numberRange {
-					// If the to field is empty, set it to 999 as there are no larger street numbers
-					if v["to"] == "" {
-						v["to"] = "999"
-					}
-					// We need those numbers as ints
-					from, _ := strconv.ParseInt(v["from"], 10, 32)
-					to, _ := strconv.ParseInt(v["to"], 10, 32)
-					// If the street number is within the from and to range, the street matches
-					if streetNumber >= from && streetNumber <= to {
-						foundStreets = append(foundStreets, street)
-					}
+		// The ranges are in JSON form, with one or two fields "odd" or "even", each having
+		// and array of json objects { from: number } and { to: number}
+		var r map[string][]map[string]string
+		e := json.Unmarshal([]byte(street.Ranges), &r)
+		if e != nil {
+			log.Println(e)
+		}
+		// Based on the street number, we determine if we are looking at the odd numbered or even
+		// numbered side
+		side := "even"
+		if streetNumber%2 == 1 {
+			side = "odd"
+		}
+		// If we have a range of numbers for the determined side
+		numberRange, ok := r[side]
+		if ok {
+			// Go through all the number ranges for that side
+			for _, v := range numberRange {
+				// If the to field is empty, set it to 999 as there are no larger street numbers
+				if v["to"] == "" {
+					v["to"] = "999"
+				}
+				// We need those numbers as ints
+				from, _ := strconv.ParseInt(v["from"], 10, 32)
+				to, _ := strconv.ParseInt(v["to"], 10, 32)
+				// If the street number is within the from and to range, the street matches
+				if streetNumber >= from && streetNumber <= to {
+					foundStreets = append(foundStreets, street)
 				}
 			}
 		}
-		return foundStreets, nil
 	}
-	return streets, nil
+	return foundStreets
 }
 
 // FindPrefectureByID -
@@ -248,13 +256,4 @@ func (a *AddressSearch) FindZipcodeByID(id string) (*AddressSearch, error) {
 	}
 	a.zipcode = zipcode
 	return a, nil
-}
-
-func numberInRange(streetRanges string) bool {
-	var jsonToMap map[string]interface{}
-	err := json.Unmarshal([]byte(streetRanges), &jsonToMap)
-	if err != nil {
-		return false
-	}
-	return false
 }
