@@ -1,0 +1,22 @@
+[Unit]
+Description=GrAddresses - Greek address search API
+After=network.target
+
+[Service]
+Type=simple
+User=graddresses
+Group=graddresses
+WorkingDirectory=/var/lib/graddresses
+EnvironmentFile=-/etc/graddresses/graddresses.env
+ExecStart=/usr/local/bin/graddresses -db=/var/lib/graddresses/gr_addresses.db
+Restart=on-failure
+RestartSec=2
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/graddresses
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

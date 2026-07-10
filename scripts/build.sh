@@ -26,7 +26,7 @@ for target in "${TARGETS[@]}"; do
 	)
 	cp "$ROOT_DIR/db/gr_addresses.db" "$build_dir/gr_addresses.db"
 
-	tar -C "$DIST_DIR" -czf "$DIST_DIR/$name.tar.gz" "$name"
+	tar -C "$build_dir" -czf "$DIST_DIR/$name.tar.gz" .
 	rm -rf "$build_dir"
 	echo "  -> dist/$name.tar.gz"
 done
