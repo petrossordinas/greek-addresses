@@ -12,6 +12,17 @@ import (
 // Maximum results per query
 const limit = 40
 
+// likePattern builds a SQL LIKE pattern from a raw query string. If the
+// caller already included a '%' wildcard anywhere in qry, it is used as-is
+// (allowing prefix, suffix, or substring searches). Otherwise qry is treated
+// as a prefix search, matching the historical behavior.
+func likePattern(qry string) string {
+	if strings.Contains(qry, "%") {
+		return qry
+	}
+	return qry + "%"
+}
+
 // Prefecture -
 type Prefecture struct {
 	ID   uint   `json:"id"`
@@ -60,7 +71,7 @@ type AddressSearch struct {
 // FilterPrefecture -
 func (a *AddressSearch) FilterPrefecture(qry string) ([]Prefecture, error) {
 	var prefectures []Prefecture
-	result := database.DBConn.Where("name LIKE ?", qry+"%").
+	result := database.DBConn.Where("name LIKE ?", likePattern(qry)).
 		Limit(limit).
 		Find(&prefectures)
 	if result.Error != nil {
@@ -73,7 +84,7 @@ func (a *AddressSearch) FilterPrefecture(qry string) ([]Prefecture, error) {
 func (a *AddressSearch) FilterCity(qry string) ([]City, error) {
 	var cities []City
 	result := database.DBConn.Preload("Prefecture").
-		Where("name LIKE ?", qry+"%").
+		Where("name LIKE ?", likePattern(qry)).
 		Limit(limit).
 		Find(&cities)
 	if result.Error != nil {
@@ -87,7 +98,7 @@ func (a *AddressSearch) FilterZipcode(qry string) ([]Zipcode, error) {
 	var zipcodes []Zipcode
 	result := database.DBConn.Preload("Prefecture").
 		Preload("City").
-		Where("zipcode LIKE ?", qry+"%").
+		Where("zipcode LIKE ?", likePattern(qry)).
 		Limit(limit).
 		Find(&zipcodes)
 	if result.Error != nil {
@@ -130,7 +141,7 @@ func (a *AddressSearch) FilterStreet(qry string) ([]Street, error) {
 	result := dbq.Preload("Prefecture").
 		Preload("City").
 		Preload("Zipcode").
-		Where("name LIKE ?", streetName+"%").
+		Where("name LIKE ?", likePattern(streetName)).
 		Limit(limit).
 		Find(&streets)
 	if result.Error != nil {
