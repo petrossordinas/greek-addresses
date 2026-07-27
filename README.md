@@ -86,8 +86,8 @@ Release binaries are built and published automatically by
 `.github/workflows/release.yml` whenever a `vX.Y.Z` tag is pushed:
 
 ```sh
-git tag v1.0.0
-git push origin v1.0.0
+git tag v1.0.1
+git push origin v1.0.1
 ```
 
 To build the release tarballs locally instead (e.g. to test the installer),
@@ -112,9 +112,10 @@ suffix search.
 | `zipcode` | Search zip codes. Ignored if `zipcode_id` is set. Use `zipcode=all` to return every zip code, ordered ascending. |
 | `zipcode_id` | Look up a single zip code by id. |
 | `street` | Search streets by name. May end with a street number (e.g. `ΑΓΙΟΥ ΚΩΝΣΤΑΝΤΙΝΟΥ 12`) to also filter by the street's odd/even number ranges. |
+| `nolimit` | Any non-empty value removes the 40-result cap for the current query, returning the full result set. |
 
 `prefecture_id`, `city_id` and `zipcode_id` narrow a street search to that
-exact prefecture/city/zipcode. Results are capped at 40.
+exact prefecture/city/zipcode. Results are capped at 40 unless `nolimit` is set.
 
 **When `street` is present**, `prefecture`, `city` and `zipcode` stop being
 standalone lookups and instead become wildcard filters on the street search
