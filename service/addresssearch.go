@@ -8,10 +8,21 @@ import (
 	"strconv"
 	"strings"
 	"unicode/utf8"
+
+	"gorm.io/gorm"
 )
 
 // Maximum results per query
 const limit = 40
+
+// applyLimit caps a query at limit results, unless noLimit is set, in which
+// case the caller takes responsibility for the (potentially large) result set.
+func applyLimit(dbq *gorm.DB, noLimit bool) *gorm.DB {
+	if noLimit {
+		return dbq
+	}
+	return dbq.Limit(limit)
+}
 
 // likePattern builds a SQL LIKE pattern from a raw query string. If the
 // caller already included a '%' wildcard anywhere in qry, it is used as-is
@@ -70,10 +81,9 @@ type AddressSearch struct {
 }
 
 // FilterPrefecture -
-func (a *AddressSearch) FilterPrefecture(qry string) ([]Prefecture, error) {
+func (a *AddressSearch) FilterPrefecture(qry string, noLimit bool) ([]Prefecture, error) {
 	var prefectures []Prefecture
-	result := database.DBConn.Where("name LIKE ?", likePattern(qry)).
-		Limit(limit).
+	result := applyLimit(database.DBConn.Where("name LIKE ?", likePattern(qry)), noLimit).
 		Find(&prefectures)
 	if result.Error != nil {
 		return nil, result.Error
@@ -82,11 +92,10 @@ func (a *AddressSearch) FilterPrefecture(qry string) ([]Prefecture, error) {
 }
 
 // FilterCity -
-func (a *AddressSearch) FilterCity(qry string) ([]City, error) {
+func (a *AddressSearch) FilterCity(qry string, noLimit bool) ([]City, error) {
 	var cities []City
-	result := database.DBConn.Preload("Prefecture").
-		Where("name LIKE ?", likePattern(qry)).
-		Limit(limit).
+	result := applyLimit(database.DBConn.Preload("Prefecture").
+		Where("name LIKE ?", likePattern(qry)), noLimit).
 		Find(&cities)
 	if result.Error != nil {
 		return nil, result.Error
@@ -95,12 +104,11 @@ func (a *AddressSearch) FilterCity(qry string) ([]City, error) {
 }
 
 // FilterZipcode -
-func (a *AddressSearch) FilterZipcode(qry string) ([]Zipcode, error) {
+func (a *AddressSearch) FilterZipcode(qry string, noLimit bool) ([]Zipcode, error) {
 	var zipcodes []Zipcode
-	result := database.DBConn.Preload("Prefecture").
+	result := applyLimit(database.DBConn.Preload("Prefecture").
 		Preload("City").
-		Where("zipcode LIKE ?", likePattern(qry)).
-		Limit(limit).
+		Where("zipcode LIKE ?", likePattern(qry)), noLimit).
 		Find(&zipcodes)
 	if result.Error != nil {
 		return nil, result.Error
@@ -125,7 +133,7 @@ func (a *AddressSearch) GetAllZipcodes() ([]Zipcode, error) {
 // prefectureQry, cityQry and zipcodeQry are optional wildcard filters on the
 // related prefecture/city/zipcode name, applied via joins in addition to
 // (and combinable with) the ID-based filters already resolved on a.
-func (a *AddressSearch) FilterStreet(qry, prefectureQry, cityQry, zipcodeQry string) ([]Street, error) {
+func (a *AddressSearch) FilterStreet(qry, prefectureQry, cityQry, zipcodeQry string, noLimit bool) ([]Street, error) {
 	var streets []Street
 	dbq := database.DBConn
 	if a.prefecture.ID != 0 {
@@ -154,11 +162,10 @@ func (a *AddressSearch) FilterStreet(qry, prefectureQry, cityQry, zipcodeQry str
 	r := regexp.MustCompile(`\d+.?$`)
 	streetNumberStr := r.FindString(qry)
 	streetName := strings.Trim(r.ReplaceAllString(qry, ""), " ")
-	result := dbq.Preload("Prefecture").
+	result := applyLimit(dbq.Preload("Prefecture").
 		Preload("City").
 		Preload("Zipcode").
-		Where("streets.name LIKE ?", likePattern(streetName)).
-		Limit(limit).
+		Where("streets.name LIKE ?", likePattern(streetName)), noLimit).
 		Find(&streets)
 	if result.Error != nil {
 		return nil, result.Error

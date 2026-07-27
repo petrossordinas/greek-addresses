@@ -32,13 +32,14 @@ func Routes() {
 func searchHandler(c *fiber.Ctx) error {
 	service := new(service.AddressSearch)
 	streetQry := c.Query("street")
+	noLimit := c.Query("nolimit") != ""
 
 	// When searching for a street, prefecture/city/zipcode become wildcard
 	// filters on that search instead of standalone lookups.
 	if streetQry == "" {
 		// Filter by prefecture
 		if c.Query("prefecture") != "" && c.Query("prefecture_id") == "" {
-			prefectures, err := service.FilterPrefecture(c.Query("prefecture"))
+			prefectures, err := service.FilterPrefecture(c.Query("prefecture"), noLimit)
 			if err != nil {
 				return internalServerError(err)
 			}
@@ -49,7 +50,7 @@ func searchHandler(c *fiber.Ctx) error {
 
 		// Filter by city
 		if c.Query("city") != "" && c.Query("city_id") == "" {
-			cities, err := service.FilterCity(c.Query("city"))
+			cities, err := service.FilterCity(c.Query("city"), noLimit)
 			if err != nil {
 				return internalServerError(err)
 			}
@@ -71,7 +72,7 @@ func searchHandler(c *fiber.Ctx) error {
 
 		// Filter by zip code
 		if c.Query("zipcode") != "" && c.Query("zipcode_id") == "" {
-			zipcodes, err := service.FilterZipcode(c.Query("zipcode"))
+			zipcodes, err := service.FilterZipcode(c.Query("zipcode"), noLimit)
 			if err != nil {
 				return internalServerError(err)
 			}
@@ -119,7 +120,7 @@ func searchHandler(c *fiber.Ctx) error {
 
 	// Filter by street
 	if streetQry != "" {
-		streets, err := service.FilterStreet(streetQry, c.Query("prefecture"), c.Query("city"), c.Query("zipcode"))
+		streets, err := service.FilterStreet(streetQry, c.Query("prefecture"), c.Query("city"), c.Query("zipcode"), noLimit)
 		if err != nil {
 			return internalServerError(err)
 		}
